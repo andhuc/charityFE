@@ -4,16 +4,16 @@ import { RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
-import { PasswordModule } from 'primeng/password';
 import { RippleModule } from 'primeng/ripple';
 import { AppFloatingConfigurator } from '../../layout/component/app.floatingconfigurator';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
+import { PasswordModule } from 'primeng/password';
 import { Notyf } from 'notyf';
 const notyf = new Notyf();
 
 @Component({
-    selector: 'app-login',
+    selector: 'app-verify',
     standalone: true,
     imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator],
     template: `
@@ -29,23 +29,21 @@ const notyf = new Notyf();
                         </div>
 
                         <div>
+
+                            <div class="text-center my-4">
+                                Check your code in your email and enter it below to verify your account.
+                            </div>
+
                             <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Email</label>
                             <input pInputText id="email1" type="text" placeholder="Email address" class="w-full md:w-[30rem] mb-8" [(ngModel)]="email" />
 
-                            <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
-                            <p-password id="password1" [(ngModel)]="password" placeholder="Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
+                            <label for="token1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Token</label>
+                            <p-password id="token1" [(ngModel)]="token" placeholder="Code" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
 
-                            <div class="flex items-center justify-between mt-2 mb-8 gap-8">
-                                <div class="flex items-center">
-                                    <p-checkbox [(ngModel)]="checked" id="rememberme1" binary class="mr-2"></p-checkbox>
-                                    <label for="rememberme1">Remember me</label>
-                                </div>
-                            </div>
-
-                            <button pButton label="Login" class="w-full" (click)="login()"></button>
+                            <button pButton label="Verify" class="w-full" (click)="verify()"></button>
 
                             <div class="text-center mt-4">
-                                <a routerLink="/register" class="text-primary font-medium">Don't have an account? Register</a>
+                                <a routerLink="/login" class="text-primary font-medium">Already have an account? Login</a>
                             </div>
                         </div>
                     </div>
@@ -54,31 +52,31 @@ const notyf = new Notyf();
         </div>
     `,
 })
-export class Login {
-    email: string = '';
-    password: string = '';
+export class Verify {
+    email: string = localStorage.getItem('ve') || '';
+    token: string = '';
     checked: boolean = false;
 
     constructor(private authService: AuthService, private router: Router) { }
 
-    login() {
-        if (this.email && this.password) {
-            this.authService.login(this.email, this.password).subscribe({
+    verify() {
+        if (this.email && this.token) {
+            this.authService.verify(this.email, this.token).subscribe({
                 next: (response: any) => {
                     if (response && response.success) {
-                        localStorage.setItem('tok', response.token || response.data);
-                        notyf.success('Login successful!');
-                        this.router.navigate(['/account/dashboard']);
+                        notyf.success('Verify successful!');
+                        this.router.navigate(['/login']);
+                        localStorage.removeItem('ve');
                     } else {
-                        notyf.error(response.message || 'Login failed. Please check your credentials.');
+                        notyf.error(response.message || 'Verify failed. Please check your token.');
                     }
                 },
                 error: (error: any) => {
-                    notyf.error('Login failed. Please check your credentials.');
+                    notyf.error('Verify failed. Please check your token.');
                 }
             });
         } else {
-            notyf.error('Please enter both email and password.');
+            notyf.error('Please enter token.');
         }
     }
 }

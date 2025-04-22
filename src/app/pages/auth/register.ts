@@ -13,7 +13,7 @@ import { Notyf } from 'notyf';
 const notyf = new Notyf();
 
 @Component({
-    selector: 'app-login',
+    selector: 'app-register',
     standalone: true,
     imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator],
     template: `
@@ -35,17 +35,13 @@ const notyf = new Notyf();
                             <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
                             <p-password id="password1" [(ngModel)]="password" placeholder="Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
 
-                            <div class="flex items-center justify-between mt-2 mb-8 gap-8">
-                                <div class="flex items-center">
-                                    <p-checkbox [(ngModel)]="checked" id="rememberme1" binary class="mr-2"></p-checkbox>
-                                    <label for="rememberme1">Remember me</label>
-                                </div>
-                            </div>
+                            <label for="retypePassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Retype Password</label>
+                            <p-password id="retypePassword" [(ngModel)]="retypePassword" placeholder="Retype Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
 
-                            <button pButton label="Login" class="w-full" (click)="login()"></button>
+                            <button pButton label="Register" class="w-full" (click)="register()"></button>
 
                             <div class="text-center mt-4">
-                                <a routerLink="/register" class="text-primary font-medium">Don't have an account? Register</a>
+                                <a routerLink="/login" class="text-primary font-medium">Already have an account? Login</a>
                             </div>
                         </div>
                     </div>
@@ -54,31 +50,39 @@ const notyf = new Notyf();
         </div>
     `,
 })
-export class Login {
+export class Register {
     email: string = '';
     password: string = '';
-    checked: boolean = false;
+    retypePassword: string = '';
 
     constructor(private authService: AuthService, private router: Router) { }
 
-    login() {
+    register() {
+        if (!this.email || !this.password || !this.retypePassword) {
+            notyf.error('Please fill in all fields.');
+            return;
+        }
+
+        if (this.password !== this.retypePassword) {
+            notyf.error('Passwords do not match.');
+            return;
+        }
+
         if (this.email && this.password) {
-            this.authService.login(this.email, this.password).subscribe({
+            this.authService.register(this.email, this.password).subscribe({
                 next: (response: any) => {
                     if (response && response.success) {
-                        localStorage.setItem('tok', response.token || response.data);
-                        notyf.success('Login successful!');
-                        this.router.navigate(['/account/dashboard']);
+                        localStorage.setItem('ve', this.email);
+                        notyf.success('Register successful!');
+                        this.router.navigate(['/verify']);
                     } else {
-                        notyf.error(response.message || 'Login failed. Please check your credentials.');
+                        notyf.error(response.message || 'Register failed. Please try again.');
                     }
                 },
                 error: (error: any) => {
-                    notyf.error('Login failed. Please check your credentials.');
+                    notyf.error('Register failed');
                 }
             });
-        } else {
-            notyf.error('Please enter both email and password.');
         }
     }
 }
