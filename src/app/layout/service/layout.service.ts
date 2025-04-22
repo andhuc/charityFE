@@ -79,10 +79,17 @@ export class LayoutService {
     private initialized = false;
 
     constructor() {
+        const storedConfig = localStorage.getItem('layoutConfig');
+        if (storedConfig) {
+            this._config = { ...this._config, ...JSON.parse(storedConfig) };
+            this.layoutConfig.set(this._config);
+        }
+
         effect(() => {
             const config = this.layoutConfig();
             if (config) {
                 this.onConfigUpdate();
+                localStorage.setItem('layoutConfig', JSON.stringify(config));
             }
         });
 
@@ -97,6 +104,7 @@ export class LayoutService {
             this.handleDarkModeTransition(config);
         });
     }
+
 
     private handleDarkModeTransition(config: layoutConfig): void {
         if ((document as any).startViewTransition) {
@@ -116,7 +124,7 @@ export class LayoutService {
             .then(() => {
                 this.onTransitionEnd();
             })
-            .catch(() => {});
+            .catch(() => { });
     }
 
     toggleDarkMode(config?: layoutConfig): void {

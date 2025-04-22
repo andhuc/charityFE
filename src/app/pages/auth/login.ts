@@ -68,7 +68,7 @@ export class Login {
                     if (response && response.success) {
                         localStorage.setItem('tok', response.token || response.data);
                         notyf.success('Login successful!');
-                        this.router.navigate(['/account/dashboard']);
+                        this.router.navigate(['/dashboard']);
                     } else {
                         notyf.error(response.message || 'Login failed. Please check your credentials.');
                     }

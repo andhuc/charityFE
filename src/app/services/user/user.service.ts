@@ -25,8 +25,8 @@ export class UserService {
 
   constructor(private http: HttpClient) { }
 
-  getUsers(page: number = 1, size: number = 10): Observable<ApiResponse<PagedResult<User>>> {
-    const params = new HttpParams().set('page', page).set('size', size);
+  getUsers(page: number = 1, size: number = 10, search?: string): Observable<ApiResponse<PagedResult<User>>> {
+    const params = new HttpParams().set('page', page).set('size', size).set('search', search || '');
     return this.http.get<ApiResponse<PagedResult<User>>>(`${API_URL}/${ENDPOINT}`, { params });
   }
 
@@ -51,7 +51,7 @@ export class UserService {
   }
 
   deleteUser(id: number): Observable<ApiResponse<boolean>> {
-    return this.http.delete<ApiResponse<boolean>>(`${API_URL}/${id}`);
+    return this.http.delete<ApiResponse<boolean>>(`${API_URL}/${ENDPOINT}/${id}`);
   }
 
 }

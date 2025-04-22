@@ -19,6 +19,8 @@ import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { User, UserService } from '../../services/user/user.service';
+import { Notyf } from 'notyf';
+const notyf = new Notyf();
 
 interface Column {
     field: string;
@@ -69,7 +71,12 @@ interface ExportColumn {
         <p-table
             #dt
             [value]="items()"
-            [rows]="10"
+            [lazy]="true"
+            (onLazyLoad)="onPage($event)"
+            [rows]="rows"
+            [first]="first"
+            [totalRecords]="totalRecords"
+            [loading]="loading"
             [columns]="cols"
             [paginator]="true"
             [globalFilterFields]="['name', 'country.name', 'representative.name', 'status']"
@@ -95,29 +102,23 @@ interface ExportColumn {
                     <th style="width: 3rem">
                         <p-tableHeaderCheckbox />
                     </th>
-                    <th style="min-width: 16rem">Code</th>
+                    <th style="min-width: 16rem">Fullname</th>
                     <th pSortableColumn="name" style="min-width:16rem">
-                        Name
+                        Username
                         <p-sortIcon field="name" />
                     </th>
-                    <th>Image</th>
                     <th pSortableColumn="price" style="min-width: 8rem">
-                        Price
+                        Email
                         <p-sortIcon field="price" />
                     </th>
-                    <th pSortableColumn="category" style="min-width:10rem">
-                        Category
-                        <p-sortIcon field="category" />
-                    </th>
                     <th pSortableColumn="rating" style="min-width: 12rem">
-                        Reviews
+                        Role
                         <p-sortIcon field="rating" />
                     </th>
                     <th pSortableColumn="inventoryStatus" style="min-width: 12rem">
-                        Status
+                        Action
                         <p-sortIcon field="inventoryStatus" />
                     </th>
-                    <th style="min-width: 12rem"></th>
                 </tr>
             </ng-template>
             <ng-template #body let-item>
@@ -125,11 +126,13 @@ interface ExportColumn {
                     <td style="width: 3rem">
                         <p-tableCheckbox [value]="item" />
                     </td>
-                    <td style="min-width: 12rem">{{ item.id }}</td>
+                    <td style="min-width: 12rem">{{ item.fullName }}</td>
                     <td style="min-width: 16rem">{{ item.username }}</td>
                     <td style="min-width: 16rem">{{ item.email }}</td>
                     <td>
-                        <p-tag [value]="item.role" [severity]="" />
+                        <p-tag 
+                            [value]="item.role === 1 ? 'Admin' : 'User'" 
+                            [severity]="item.role === 1 ? 'danger' : 'info'" />
                     </td>
                     <td>
                         <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editItem(item)" />
@@ -141,7 +144,71 @@ interface ExportColumn {
 
         <p-dialog [(visible)]="itemDialog" [style]="{ width: '450px' }" header="Item Details" [modal]="true">
             <ng-template #content>
+                <div *ngIf="item" class="flex flex-col gap-5 p-4">
+                    <div class="field">
+                        <label for="fullName" class="font-medium text-lg">Full Name</label>
+                        <input 
+                            id="fullName" 
+                            type="text" 
+                            pInputText 
+                            [(ngModel)]="item.fullName" 
+                            required 
+                            autofocus
+                            class="p-inputtext w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    
+                    <div class="field">
+                        <label for="username" class="font-medium text-lg">Username</label>
+                        <input 
+                            id="username" 
+                            type="text" 
+                            pInputText 
+                            [(ngModel)]="item.username" 
+                            required
+                            class="p-inputtext w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    
+                    <div class="field">
+                        <label for="email" class="font-medium text-lg">Email</label>
+                        <input 
+                            id="email" 
+                            type="email" 
+                            pInputText 
+                            [(ngModel)]="item.email" 
+                            required
+                            class="p-inputtext w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    
+                    <div class="field">
+                        <label class="font-medium text-lg">Role</label>
+                        <div class="flex gap-6">
+                            <div class="p-field-radiobutton">
+                                <p-radioButton 
+                                    name="role" 
+                                    [value]="1" 
+                                    [(ngModel)]="item.role" 
+                                    inputId="admin" 
+                                    class="p-radiobutton"
+                                ></p-radioButton>
+                                <label for="admin">Admin</label>
+                            </div>
 
+                            <div class="p-field-radiobutton">
+                                <p-radioButton 
+                                    name="role" 
+                                    [value]="2" 
+                                    [(ngModel)]="item.role" 
+                                    inputId="user" 
+                                    class="p-radiobutton"
+                                ></p-radioButton>
+                                <label for="user">User</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </ng-template>
 
             <ng-template #footer>
@@ -173,6 +240,18 @@ export class UserPage implements OnInit {
 
     cols!: Column[];
 
+    rows: number = 10;
+    totalRecords: number = 0;
+    loading: boolean = false;
+    first: number = 0;
+
+    onPage(event: any) {
+        const page = event.first / event.rows + 1;
+        this.rows = event.rows;
+        this.first = event.first;
+        this.loadData(page, this.rows);
+    }
+
     constructor(
         private itemService: UserService,
         private messageService: MessageService,
@@ -184,24 +263,36 @@ export class UserPage implements OnInit {
     }
 
     ngOnInit() {
-        this.loadDemoData();
+        this.loadData();
     }
 
-    loadDemoData() {
-        this.itemService.getUsers().subscribe((response) => {
+    loadData(page = 1, size = 10, search = '') {
+        this.loading = true;
+        this.itemService.getUsers(page, size, search).subscribe((response) => {
             this.items.set(response.data.queryable);
+            this.totalRecords = response.data.rowCount;
+            this.loading = false;
         });
     }
 
     onGlobalFilter(table: Table, event: Event) {
-        table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
+        const value = (event.target as HTMLInputElement).value;
+        this.first = 0;
+        this.loadData(1, this.rows, value);
     }
 
     openNew() {
-        this.item = null;
+        this.item = {
+            id: 0,
+            fullName: '',
+            username: '',
+            email: '',
+            role: 2
+        };
         this.submitted = false;
         this.itemDialog = true;
     }
+
 
     editItem(item: User) {
         this.item = { ...item };
@@ -214,14 +305,22 @@ export class UserPage implements OnInit {
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
             accept: () => {
-                this.items.set(this.items().filter((val) => !this.selectedItems?.includes(val)));
-                this.selectedItems = null;
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Items Deleted',
-                    life: 3000
-                });
+                if (this.selectedItems) {
+                    this.selectedItems.forEach((item) => {
+                        if (item.id !== undefined) {
+                            this.itemService.deleteUser(item.id).subscribe(
+                                () => {
+                                    this.items.set(this.items().filter((val) => val.id !== item.id));
+                                    this.selectedItems = null;
+                                    notyf.success('Items Deleted');
+                                },
+                                (error) => {
+                                    notyf.error('Failed to delete the items');
+                                }
+                            );
+                        }
+                    });
+                }
             }
         });
     }
@@ -233,61 +332,50 @@ export class UserPage implements OnInit {
 
     deleteItem(item: User) {
         this.confirmationService.confirm({
-            message: 'Are you sure you want to delete this ?',
+            message: 'Are you sure you want to delete this item?',
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
             accept: () => {
-                this.items.set(this.items().filter((val) => val.id !== item.id));
-                this.item = null;
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Item Deleted',
-                    life: 3000
-                });
+                if (item.id !== undefined) {
+                    this.itemService.deleteUser(item.id).subscribe(
+                        () => {
+                            this.items.set(this.items().filter((val) => val.id !== item.id));
+                            this.item = null;
+                            notyf.success('Item Deleted');
+                        },
+                        (error) => {
+                            notyf.error('Failed to delete the item');
+                        }
+                    );
+                }
             }
         });
     }
 
-    findIndexById(id: string): number {
-        let index = -1;
-        for (let i = 0; i < this.items().length; i++) {
-            if (this.items()[i].id + '' === id) {
-                index = i;
-                break;
-            }
-        }
-
-        return index;
-    }
-
     saveItem() {
         this.submitted = true;
-        let _items = this.items();
-        // if (this.item.name?.trim()) {
-        //     if (this.item.id) {
-        //         _items[this.findIndexById(this.item.id)] = this.item;
-        //         this.items.set([..._items]);
-        //         this.messageService.add({
-        //             severity: 'success',
-        //             summary: 'Successful',
-        //             detail: 'Item Updated',
-        //             life: 3000
-        //         });
-        //     } else {
-        //         this.item.id = this.createId();
-        //         this.item.image = 'product-placeholder.svg';
-        //         this.messageService.add({
-        //             severity: 'success',
-        //             summary: 'Successful',
-        //             detail: 'Item Created',
-        //             life: 3000
-        //         });
-        //         this.items.set([..._items, this.item]);
-        //     }
 
-        //     this.itemDialog = false;
-        //     this.item = {};
-        // }
+        if (!this.item?.fullName?.trim() || !this.item.username?.trim() || !this.item.email?.trim()) {
+            return;
+        }
+
+        if (this.item.id) {
+            // Update
+            this.itemService.updateUser(this.item).subscribe(() => {
+                const _items = this.items().map(u => u.id === this.item!.id ? this.item! : u);
+                this.items.set(_items);
+                notyf.success('Item Updated');
+                this.itemDialog = false;
+                this.item = null;
+            });
+        } else {
+            // Create
+            this.itemService.addUser(this.item).subscribe((createdUser) => {
+                this.loadData();
+                notyf.success('Item Created');
+                this.itemDialog = false;
+                this.item = null;
+            });
+        }
     }
 }
