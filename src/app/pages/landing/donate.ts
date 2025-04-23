@@ -9,6 +9,7 @@ import { FooterWidget } from './components/footerwidget';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Donation, DonationService } from '../../services/donation/donation.service';
+import { UserDonation, UserDonationService } from '../../services/userDonation/userDonation.service';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { Notyf } from 'notyf';
 import { PaymentService } from '../../services/payment/payment.service';
@@ -83,6 +84,16 @@ const notyf = new Notyf();
             </form>
           </div>
 
+            <div *ngIf="userDonations.length > 0" class="mt-10">
+                <h3 class="text-xl font-semibold mb-4 text-surface-900 dark:text-surface-0">Top Donors</h3>
+                <ul class="divide-y divide-surface-200 dark:divide-surface-600">
+                    <li *ngFor="let ud of userDonations" class="py-2 flex justify-between items-center">
+                        <span class="text-surface-800 dark:text-surface-100">{{ ud.userFullname || 'Anonymous' }}</span>
+                        <span class="font-medium text-primary text-lg">{{ ud.amount | currency:'VND':'symbol':'1.0-0' }}</span>
+                    </li>
+                </ul>
+            </div>
+
         </div>
 
         <footer-widget></footer-widget>
@@ -95,8 +106,9 @@ export class Donate implements OnInit {
     donationId: number = 0;
     donation: Donation | null = null;
     raisedPercentage: number = 0;
+    userDonations: UserDonation[] = [];
 
-    constructor(private route: ActivatedRoute, private router: Router, private donationService: DonationService, private paymentService: PaymentService) { }
+    constructor(private route: ActivatedRoute, private router: Router, private donationService: DonationService, private paymentService: PaymentService, private userDonationService: UserDonationService) { }
 
     ngOnInit() {
         this.route.queryParams.subscribe((params) => {
@@ -116,6 +128,19 @@ export class Donate implements OnInit {
                 },
                 (error) => {
                     notyf.error('Error fetching donation details.');
+                }
+            );
+
+            this.userDonationService.getUserDonations(1, 100, '', undefined, this.donationId).subscribe(
+                (response) => {
+                    if (response.success) {
+                        this.userDonations = response.data.queryable.sort((a, b) => b.amount - a.amount);
+                    } else {
+                        notyf.error('Failed to fetch user donations.');
+                    }
+                },
+                (error) => {
+                    notyf.error('Error fetching user donations.');
                 }
             );
         } else {
@@ -140,7 +165,7 @@ export class Donate implements OnInit {
 
         if (this.donationAmount > 0) {
 
-            this.paymentService.payment({amount: this.donationAmount, donationId: this.donationId}).subscribe({
+            this.paymentService.payment({ amount: this.donationAmount, donationId: this.donationId }).subscribe({
                 next: (response) => {
                     if (response.success && response.data) {
                         window.location.href = response.data;
