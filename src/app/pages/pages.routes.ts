@@ -7,5 +7,4 @@ export default [
     { path: 'crud', component: Crud },
     { path: 'user', component: UserPage },
     { path: 'donation', component: DonationPage },
-    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

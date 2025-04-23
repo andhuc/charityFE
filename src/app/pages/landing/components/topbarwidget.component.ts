@@ -1,13 +1,15 @@
 import { Component } from '@angular/core';
-import { StyleClassModule } from 'primeng/styleclass';
 import { Router, RouterModule } from '@angular/router';
+import { StyleClassModule } from 'primeng/styleclass';
 import { RippleModule } from 'primeng/ripple';
 import { ButtonModule } from 'primeng/button';
+import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'topbar-widget',
-    imports: [RouterModule, StyleClassModule, ButtonModule, RippleModule],
-    template: `<a class="flex items-center" href="#">
+    imports: [RouterModule, StyleClassModule, ButtonModule, RippleModule, CommonModule],
+    template: `
+        <a class="flex items-center" href="#">
             <img src="https://cdn-icons-png.flaticon.com/512/3047/3047825.png" class="mr-4" style="width: 40px; height: 40px" />
             <span class="text-surface-900 dark:text-surface-0 font-medium text-2xl leading-normal mr-20">ECharity</span>
         </a>
@@ -34,17 +36,36 @@ import { ButtonModule } from 'primeng/button';
                     </a>
                 </li>
                 <li>
-                    <a (click)="router.navigate(['/landing'], { fragment: 'pricing' })" pRipple class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl">
-                        <span>Pricing</span>
+                    <a (click)="router.navigate(['/campaign'])" pRipple class="px-0 py-4 text-surface-900 dark:text-surface-0 font-medium text-xl">
+                        <span>Campaign</span>
                     </a>
                 </li>
             </ul>
+
+            <!-- Conditional Rendering for Login/Register or Profile -->
             <div class="flex border-t lg:border-t-0 border-surface py-4 lg:py-0 mt-4 lg:mt-0 gap-2">
-                <button pButton pRipple label="Login" routerLink="/login" [rounded]="true" [text]="true"></button>
-                <button pButton pRipple label="Register" routerLink="/register" [rounded]="true"></button>
+                <!-- Check if token exists in localStorage -->
+                <ng-container *ngIf="!token; else profileLink">
+                    <button pButton pRipple label="Login" routerLink="/login" [rounded]="true" [text]="true"></button>
+                    <button pButton pRipple label="Register" routerLink="/register" [rounded]="true"></button>
+                </ng-container>
+                
+                <ng-template #profileLink>
+                    <button pButton pRipple label="Profile" routerLink="/profile" [rounded]="true"></button>
+                    <button pButton pRipple label="Logout" (click)="logout()" [rounded]="true" [text]="true"></button>
+                </ng-template>
             </div>
-        </div> `
+        </div>
+    `
 })
 export class TopbarWidget {
+    token: string | null = localStorage.getItem('tok');
+
     constructor(public router: Router) {}
+
+    logout() {
+        this.token = null;
+        localStorage.removeItem('tok');
+        this.router.navigate(['/']);
+    }
 }

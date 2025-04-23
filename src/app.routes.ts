@@ -4,6 +4,8 @@ import { Dashboard } from './app/pages/dashboard/dashboard';
 import { Documentation } from './app/pages/documentation/documentation';
 import { Landing } from './app/pages/landing/landing';
 import { Notfound } from './app/pages/notfound/notfound';
+import { Campaign } from './app/pages/landing/campaign';
+import { Donate } from './app/pages/landing/donate';
 
 export const appRoutes: Routes = [
     { path: '', component: Landing },
@@ -16,6 +18,9 @@ export const appRoutes: Routes = [
             { path: '', loadChildren: () => import('./app/pages/pages.routes') }
         ]
     },
+    { path: 'landing', component: Landing },
+    { path: 'campaign', component: Campaign },
+    { path: 'donate', component: Donate },
     { path: 'notfound', component: Notfound },
     { path: '**', redirectTo: '/notfound' }
 ];

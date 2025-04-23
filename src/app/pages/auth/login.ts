@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
@@ -58,17 +58,37 @@ export class Login {
     email: string = '';
     password: string = '';
     checked: boolean = false;
+    ref: string | null = null;
 
-    constructor(private authService: AuthService, private router: Router) { }
+    constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute) { }
+
+    ngOnInit(): void {
+        this.route.queryParams.subscribe(params => {
+            this.ref = params['ref'];
+        });
+    }
 
     login() {
         if (this.email && this.password) {
             this.authService.login(this.email, this.password).subscribe({
                 next: (response: any) => {
                     if (response && response.success) {
-                        localStorage.setItem('tok', response.token || response.data);
+                        const token = response.token || response.data;
+                        localStorage.setItem('tok', token);
+
+                        const payload = token.split('.')[1];
+                        const decodedPayload = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+                        const isAdmin = decodedPayload.isAdmin;
+
                         notyf.success('Login successful!');
-                        this.router.navigate(['/dashboard']);
+                        if (isAdmin) {
+                            this.router.navigate(['/dashboard']);
+                        }
+                        if (this.ref) {
+                            this.router.navigate(['/donate'], { queryParams: { id: this.ref } });
+                        } else {
+                            this.router.navigate(['/campaign']);
+                        }
                     } else {
                         notyf.error(response.message || 'Login failed. Please check your credentials.');
                     }

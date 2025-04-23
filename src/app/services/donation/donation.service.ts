@@ -14,6 +14,7 @@ export interface Donation {
   status: string;
   createdAt: Date;
   updatedAt?: Date;
+  imageUrl?: string;
 }
 
 const ENDPOINT = 'api/Donation';
