@@ -25,7 +25,8 @@ export class AppMenu {
                 items: [
                     { label: 'Dashboard', icon: 'pi pi-fw pi-home', routerLink: ['/dashboard'] },
                     { label: 'User', icon: 'pi pi-fw pi-users', routerLink: ['/user'] },
-                    { label: 'Donations', icon: 'pi pi-fw pi-heart', routerLink: ['/donation'] },
+                    { label: 'Donation', icon: 'pi pi-fw pi-heart', routerLink: ['/donation'] },
+                    { label: 'User Donation', icon: 'pi pi-gift', routerLink: ['/user-donation'] },
                 ]
             },
             // {

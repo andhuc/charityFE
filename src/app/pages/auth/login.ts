@@ -83,8 +83,7 @@ export class Login {
                         notyf.success('Login successful!');
                         if (isAdmin) {
                             this.router.navigate(['/dashboard']);
-                        }
-                        if (this.ref) {
+                        } else if (this.ref) {
                             this.router.navigate(['/donate'], { queryParams: { id: this.ref } });
                         } else {
                             this.router.navigate(['/campaign']);
