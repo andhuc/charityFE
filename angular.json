@@ -33,7 +33,8 @@
                         ],
                         "styles": [
                             "src/styles.scss",
-                            "node_modules/notyf/notyf.min.css"
+                            "node_modules/notyf/notyf.min.css",
+                            "node_modules/quill/dist/quill.snow.css"
                         ],
                         "scripts": []
                     },

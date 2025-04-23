@@ -19,6 +19,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
+import { EditorModule } from 'primeng/editor';
 import { Donation, DonationService } from '../../services/donation/donation.service';
 import { Notyf } from 'notyf';
 const notyf = new Notyf();
@@ -56,7 +57,8 @@ interface ExportColumn {
         InputIconModule,
         IconFieldModule,
         ConfirmDialogModule,
-        DropdownModule
+        DropdownModule,
+        EditorModule
     ],
     template: `
         <p-toolbar styleClass="mb-6">
@@ -141,8 +143,9 @@ interface ExportColumn {
 
                     <div class="field">
                         <label class="font-medium text-lg">Description</label>
-                        <textarea pInputTextarea [(ngModel)]="item.description" rows="5" class="w-full"></textarea>
+                        <p-editor [(ngModel)]="item.description" [style]="{height:'300px'}"></p-editor>
                     </div>
+
 
                     <div class="field">
                         <label class="font-medium text-lg">Goal Amount</label>
