@@ -13,13 +13,17 @@ export class AuthService {
   login(email: string, password: string): Observable<any> {
     const loginPayload = { email, password };
 
-    return this.http.post(`${API_URL}/api/authen/login`, loginPayload);
+    return this.http.post(`${API_URL}/api/authen/login`, loginPayload, {
+      headers: new HttpHeaders({ 'X-Skip-Auth': 'true' })
+    });
   }
 
   register(email: string, password: string): Observable<any> {
     const registerPayload = { email, password };
 
-    return this.http.post(`${API_URL}/api/authen/register`, registerPayload);
+    return this.http.post(`${API_URL}/api/authen/register`, registerPayload, {
+      headers: new HttpHeaders({ 'X-Skip-Auth': 'true' })
+    });
   }
 
   verify(email: string, token: string): Observable<any> {
