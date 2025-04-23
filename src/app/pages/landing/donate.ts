@@ -11,13 +11,14 @@ import { CommonModule } from '@angular/common';
 import { Donation, DonationService } from '../../services/donation/donation.service';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { Notyf } from 'notyf';
+import { PaymentService } from '../../services/payment/payment.service';
 const notyf = new Notyf();
 
 @Component({
-  selector: 'app-donate',
-  standalone: true,
-  imports: [CommonModule, ProgressBarModule, RouterModule, TopbarWidget, RippleModule, StyleClassModule, ButtonModule, DividerModule, FooterWidget, FormsModule],
-  template: `
+    selector: 'app-donate',
+    standalone: true,
+    imports: [CommonModule, ProgressBarModule, RouterModule, TopbarWidget, RippleModule, StyleClassModule, ButtonModule, DividerModule, FooterWidget, FormsModule],
+    template: `
     <div class="bg-surface-0 dark:bg-surface-900">
       <div id="home" class="landing-wrapper overflow-hidden">
         <topbar-widget class="py-6 px-6 mx-0 md:mx-12 lg:mx-20 lg:px-20 flex items-center justify-between relative lg:static"></topbar-widget>
@@ -90,52 +91,70 @@ const notyf = new Notyf();
   `,
 })
 export class Donate implements OnInit {
-  donationAmount: number = 0;
-  donationId: number | null = null;
-  donation: Donation | null = null;
-  raisedPercentage: number = 0;
+    donationAmount: number = 0;
+    donationId: number = 0;
+    donation: Donation | null = null;
+    raisedPercentage: number = 0;
 
-  constructor(private route: ActivatedRoute, private router: Router, private donationService: DonationService) { }
+    constructor(private route: ActivatedRoute, private router: Router, private donationService: DonationService, private paymentService: PaymentService) { }
 
-  ngOnInit() {
-    this.route.queryParams.subscribe((params) => {
-      this.donationId = params['id'];
-    });
+    ngOnInit() {
+        this.route.queryParams.subscribe((params) => {
+            this.donationId = params['id'];
+            if (params['successP']) notyf.success('Donate successful!');
+        });
 
-    const token = localStorage.getItem('tok');
-    if (!token) {
-      this.router.navigate(['/login'], { queryParams: { ref: this.donationId } });
-    }
-
-    if (this.donationId) {
-      this.donationService.getDonationById(this.donationId).subscribe(
-        (response) => {
-          if (response.success) {
-            this.donation = response.data;
-            this.updateProgressBar();
-          } else {
-            notyf.error('Failed to fetch donation details.');
-          }
-        },
-        (error) => {
-          notyf.error('Error fetching donation details.');
+        if (this.donationId) {
+            this.donationService.getDonationById(this.donationId).subscribe(
+                (response) => {
+                    if (response.success) {
+                        this.donation = response.data;
+                        this.updateProgressBar();
+                    } else {
+                        notyf.error('Failed to fetch donation details.');
+                    }
+                },
+                (error) => {
+                    notyf.error('Error fetching donation details.');
+                }
+            );
+        } else {
+            this.router.navigate(['/campaign']);
+            notyf.error('Invalid donation ID.');
         }
-      );
     }
-  }
 
-  updateProgressBar() {
-    if (this.donation) {
-      const { goalAmount, raisedAmount } = this.donation;
-      this.raisedPercentage = (raisedAmount / goalAmount) * 100;
+    updateProgressBar() {
+        if (this.donation) {
+            const { goalAmount, raisedAmount } = this.donation;
+            this.raisedPercentage = (raisedAmount / goalAmount) * 100;
+        }
     }
-  }
 
-  onSubmit() {
-    if (this.donationAmount > 0) {
-      // Add further logic for donation submission here
-    } else {
-      notyf.error('Please enter a valid donation amount.');
+    async onSubmit() {
+        if (!localStorage.getItem('tok')) {
+            this.router.navigate(['/login'], { queryParams: { ref: this.donationId } });
+            notyf.error('Please login to donate.');
+            return;
+        }
+
+        if (this.donationAmount > 0) {
+
+            this.paymentService.payment({amount: this.donationAmount, donationId: this.donationId}).subscribe({
+                next: (response) => {
+                    if (response.success && response.data) {
+                        window.location.href = response.data;
+                    } else {
+                        notyf.error('Payment failed. Please try again.');
+                    }
+                },
+                error: (error) => {
+                    notyf.error('Error processing payment. Please try again.');
+                }
+            })
+
+        } else {
+            notyf.error('Please enter a valid donation amount.');
+        }
     }
-  }
 }
